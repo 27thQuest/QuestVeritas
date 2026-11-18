@@ -1,36 +1,30 @@
-# Reading Library
+# **Quest Veritas**
 
 A minimalist personal reading and research library built with Electron.js.
 
-Save articles, upload PDFs, annotate text, write notes — all stored locally on your machine.
+Save articles, upload PDFs, annotate text, and write notes — all stored locally on your machine.
 
----
+## **Features**
 
-## Features
+- **Library** — Save articles by pasting text, uploading PDFs, or importing from a URL.
+- **Reader** — Clean reading interface with adjustable font size and reading width.
+- **Annotations** — Highlight text in yellow, red, blue, or green; underline text; and add comments.
+- **Notes** — General research notes with autosave. Notes can be linked to articles.
+- **Highlights** — View all annotations across every article in one place.
+- **Settings** — Customize dark/light theme, font size, reading width, and default highlight color.
+- **Backup** — Export or import your entire library as a single JSON file.
+- **100% Local** — No accounts, cloud storage, or tracking.
 
-- **Library** — Save articles by pasting text, uploading PDFs, or importing from a URL
-- **Reader** — Clean reading interface with adjustable font size and width
-- **Annotations** — Highlight text in yellow, red, blue, or green; underline; add comments
-- **Notes** — General research notes with autosave; notes can be linked to articles
-- **Highlights page** — See all your annotations across every article in one place
-- **Settings** — Dark/light theme, font size, reading width, default highlight color
-- **Backup** — Export and import your entire library as a single JSON file
-- **100% local** — No accounts, no cloud, no tracking
+## **Requirements**
 
----
-
-## Requirements
-
-- [Node.js](https://nodejs.org/) v18 or later
+- [Node.js](https://nodejs.org/?utm_source=chatgpt.com) v18 or later
 - npm v9 or later
 
----
+## **Installation & Development**
 
-## Installation & Development
-
-```bash
+```
 # Clone or download the project, then:
-cd reading-library
+cd quest-veritas
 
 # Install dependencies (includes Electron and PDF.js)
 npm install
@@ -39,11 +33,9 @@ npm install
 npm start
 ```
 
----
+## **Building for Windows**
 
-## Building for Windows
-
-```bash
+```
 # Build Windows installer (.exe) + portable executable
 npm run dist
 
@@ -51,23 +43,22 @@ npm run dist
 ```
 
 The build produces:
-- `Reading Library Setup x.x.x.exe` — NSIS installer
-- `Reading Library x.x.x.exe` — Portable executable
 
-> **Note:** Building requires the app icon at `src/assets/icon.ico`.  
+- `Quest Veritas Setup x.x.x.exe` — NSIS installer
+- `Quest Veritas x.x.x.exe` — Portable executable
+
+> **Note:** Building requires the app icon at `src/assets/icon.ico`.\
 > For a quick build without an icon, remove the `"icon"` line from `package.json` under `build > win`.
 
----
-
-## Data Storage
+## **Data Storage**
 
 All data is stored in Electron's `userData` directory — never inside the installation folder, so your data survives app updates.
 
-| OS      | Location |
-|---------|----------|
-| Windows | `%APPDATA%\reading-library\` |
-| macOS   | `~/Library/Application Support/reading-library/` |
-| Linux   | `~/.config/reading-library/` |
+| OS      | Location                                       |
+| ------- | ---------------------------------------------- |
+| Windows | `%APPDATA%\quest-veritas\`                     |
+| macOS   | `~/Library/Application Support/quest-veritas/` |
+| Linux   | `~/.config/quest-veritas/`                     |
 
 ```
 userData/
@@ -76,45 +67,45 @@ userData/
 │   ├── notes.json
 │   └── annotations.json
 ├── documents/
-│   └── pdfs/        ← imported PDFs are copied here
+│   └── pdfs/             ← Imported PDFs are copied here
 └── settings/
     └── preferences.json
 ```
 
----
+## **Usage**
 
-## Usage
+### **Adding Articles**
 
-### Adding Articles
+**Paste Text** — Fill in the title, author, source, and paste the article body.
 
-**Paste text** — Fill in the title, author, source and paste the article body.
+**Upload PDF** — Click "Choose PDF" or drag and drop. The PDF is copied into your data folder, leaving the original untouched.
 
-**Upload PDF** — Click "Choose PDF" or drag and drop. The PDF is copied into your data folder and the original is left untouched.
+**Import from URL** — Enter a URL and click Fetch. The app automatically extracts readable text. If extraction fails, you can paste the text manually.
 
-**Import from URL** — Enter a URL and click Fetch. The app extracts readable text automatically; if extraction fails, paste the text manually.
+### **Reading**
 
-### Reading
+Click any article to open the reader. Use the **A− / A+** buttons to adjust font size. Toggle the annotation panel using the chat icon.
 
-Click any article to open the reader. Use the **A−** / **A+** buttons to adjust font size. Toggle the annotation panel with the chat icon.
+Select text to reveal the annotation toolbar — choose a highlight color, underline text, or add a comment.
 
-Select any text to see the annotation toolbar — choose a highlight color, underline, or add a comment.
+### **Notes**
 
-### Notes
+Open **Notes** in the sidebar. Create a new note using the new-note button, then enter a title and content. Notes autosave every 800ms.
 
-Open **Notes** in the sidebar. Create a new note with the button, type a title and content — it autosaves every 800ms. Notes can also be created from within the reader (via the + button in the annotation panel).
+You can also create notes directly from the reader using the **+** button in the annotation panel.
 
-### Backup
+### **Backup**
 
-Go to **Settings → Export Backup** to save a `.json` snapshot of everything. Use **Import Backup** to restore it.
+Go to **Settings → Export Backup** to save a `.json` snapshot of your entire library.
 
----
+Use **Import Backup** to restore your library from a previous backup.
 
-## Project Structure
+## **Project Structure**
 
 ```
-reading-library/
-├── main.js          ← Electron main process
-├── preload.js       ← Secure IPC bridge (contextBridge)
+quest-veritas/
+├── main.js                 ← Electron main process
+├── preload.js              ← Secure IPC bridge (contextBridge)
 ├── package.json
 ├── README.md
 └── src/
@@ -131,24 +122,20 @@ reading-library/
         ├── library.js      ← Article management & cards
         ├── reader.js       ← Text reading & annotation
         ├── pdf-reader.js   ← PDF.js integration
-        ├── annotations.js  ← Annotations page
+        ├── annotations.js   ← Annotations page
         ├── notes.js        ← Notes management
         ├── search.js       ← Search shortcuts
         └── settings.js     ← Settings page
 ```
 
----
+## **Security**
 
-## Security
+- `contextIsolation: true` — Renderer has no direct Node.js access.
+- `nodeIntegration: false` — Renderer cannot call Node APIs directly.
+- All file I/O runs in the main process via IPC.
+- PDF files are path-validated against `userData` before reading.
+- Atomic JSON writes (write to `.tmp`, then rename) prevent data corruption.
 
-- `contextIsolation: true` — renderer has no direct Node.js access
-- `nodeIntegration: false` — renderer cannot call Node APIs directly
-- All file I/O runs in the main process via IPC
-- PDF files are path-validated against `userData` before reading
-- Atomic JSON writes (write to `.tmp`, then rename) prevent data corruption
-
----
-
-## License
+## **License**
 
 MIT
