@@ -1,6 +1,6 @@
 {
-  "name": "reading-library",
-  "version": "1.0.0",
+  "name": "Quest Veritas",
+  "version": "0.0.0",
   "description": "A minimalist personal reading and research library",
   "main": "main.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "pack": "electron-builder build --dir"
   },
   "keywords": ["reading", "library", "research", "electron"],
-  "author": "Reading Library",
+  "author": "Quest Veritas",
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
@@ -20,8 +20,8 @@
     "pdfjs-dist": "^3.11.174"
   },
   "build": {
-    "appId": "com.readinglibrary.app",
-    "productName": "Reading Library",
+    "appId": "com.questveritas.app",
+    "productName": "Quest Veritas",
     "directories": {
       "output": "dist"
     },
