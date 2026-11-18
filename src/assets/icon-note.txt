@@ -1,1 +1,0 @@
-Replace with actual .ico file for production builds

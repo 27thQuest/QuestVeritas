@@ -1,141 +1,107 @@
-# **Quest Veritas**
+# Quest Veritas
 
-A minimalist personal reading and research library built with Electron.js.
+Quest Veritas is a local-first desktop reading and research library. The project is being migrated from its original plain JavaScript Electron app to a React and TypeScript architecture.
 
-Save articles, upload PDFs, annotate text, and write notes — all stored locally on your machine.
+## Current status
 
-## **Features**
+The repository contains the initial React, TypeScript, Vite, and Electron scaffold, a dark library interface draft, a typed preload bridge, and an initial Drizzle SQLite schema. The migration is in progress. The existing reader, notes, annotations, PDF handling, and JSON backup features remain in the legacy `src/index.html` and `src/js/` application and have not yet been ported to the new interface. URL validation is wired to Electron IPC; article fetching and extraction are not yet implemented in the new app.
 
-- **Library** — Save articles by pasting text, uploading PDFs, or importing from a URL.
-- **Reader** — Clean reading interface with adjustable font size and reading width.
-- **Annotations** — Highlight text in yellow, red, blue, or green; underline text; and add comments.
-- **Notes** — General research notes with autosave. Notes can be linked to articles.
-- **Highlights** — View all annotations across every article in one place.
-- **Settings** — Customize dark/light theme, font size, reading width, and default highlight color.
-- **Backup** — Export or import your entire library as a single JSON file.
-- **100% Local** — No accounts, cloud storage, or tracking.
+The current UI uses illustrative library cards for layout work. They are not records loaded from the database. SQLite persistence and database migrations are not yet connected to the application runtime.
 
-## **Requirements**
+## Technology
 
-- [Node.js](https://nodejs.org/?utm_source=chatgpt.com) v18 or later
-- npm v9 or later
+- Electron with context isolation, sandboxed renderer, and Node integration disabled
+- React, TypeScript, Vite, and React Router
+- Tailwind CSS v4 and Lucide icons
+- Drizzle ORM with SQLite schema foundation
+- Zustand, Zod, TipTap, and Radix UI dependencies for upcoming features
+- electron-builder for Windows packaging
 
-## **Installation & Development**
+## Requirements
 
-```
-# Clone or download the project, then:
-cd quest-veritas
+- Node.js 20.19+ or 22.12+ (required by Vite 7)
+- npm
+- Windows for the configured NSIS and portable builds
 
-# Install dependencies (includes Electron and PDF.js)
+## Development
+
+Install dependencies:
+
+```bash
 npm install
+```
 
-# Start in development mode
+Start the Vite development server:
+
+```bash
+npm run dev
+```
+
+Start the Electron application with the Vite development server:
+
+```bash
 npm start
 ```
 
-## **Building for Windows**
+Create a production renderer build:
 
+```bash
+npm run build
 ```
-# Build Windows installer (.exe) + portable executable
+
+Generate a Drizzle migration after changing `src/db/schema.ts`:
+
+```bash
+npm run db:generate
+```
+
+Build Windows installer and portable packages:
+
+```bash
 npm run dist
-
-# Output is in the dist/ folder
 ```
 
-The build produces:
+The development and packaging commands are scaffolded and should be considered in progress until they complete successfully in the target environment.
 
-- `Quest Veritas Setup x.x.x.exe` — NSIS installer
-- `Quest Veritas x.x.x.exe` — Portable executable
+## Architecture
 
-> **Note:** Building requires the app icon at `src/assets/icon.ico`.\
-> For a quick build without an icon, remove the `"icon"` line from `package.json` under `build > win`.
-
-## **Data Storage**
-
-All data is stored in Electron's `userData` directory — never inside the installation folder, so your data survives app updates.
-
-| OS      | Location                                       |
-| ------- | ---------------------------------------------- |
-| Windows | `%APPDATA%\quest-veritas\`                     |
-| macOS   | `~/Library/Application Support/quest-veritas/` |
-| Linux   | `~/.config/quest-veritas/`                     |
-
-```
-userData/
-├── database/
-│   ├── articles.json
-│   ├── notes.json
-│   └── annotations.json
-├── documents/
-│   └── pdfs/             ← Imported PDFs are copied here
-└── settings/
-    └── preferences.json
+```text
+React renderer (src/)
+  -> typed, limited window.veritas API (electron/preload.ts)
+  -> validated Electron IPC handlers (electron/main.ts)
+  -> local application data (planned SQLite database and document storage)
 ```
 
-## **Usage**
+The renderer does not receive direct Node.js or filesystem access. Privileged operations should be added as explicit IPC methods, with input validation in the main process. User data is intended to live under Electron's `app.getPath('userData')` directory; runtime SQLite initialization and migrations remain to be implemented.
 
-### **Adding Articles**
+## Project layout
 
-**Paste Text** — Fill in the title, author, source, and paste the article body.
-
-**Upload PDF** — Click "Choose PDF" or drag and drop. The PDF is copied into your data folder, leaving the original untouched.
-
-**Import from URL** — Enter a URL and click Fetch. The app automatically extracts readable text. If extraction fails, you can paste the text manually.
-
-### **Reading**
-
-Click any article to open the reader. Use the **A− / A+** buttons to adjust font size. Toggle the annotation panel using the chat icon.
-
-Select text to reveal the annotation toolbar — choose a highlight color, underline text, or add a comment.
-
-### **Notes**
-
-Open **Notes** in the sidebar. Create a new note using the new-note button, then enter a title and content. Notes autosave every 800ms.
-
-You can also create notes directly from the reader using the **+** button in the annotation panel.
-
-### **Backup**
-
-Go to **Settings → Export Backup** to save a `.json` snapshot of your entire library.
-
-Use **Import Backup** to restore your library from a previous backup.
-
-## **Project Structure**
-
-```
-quest-veritas/
-├── main.js                 ← Electron main process
-├── preload.js              ← Secure IPC bridge (contextBridge)
-├── package.json
-├── README.md
-└── src/
-    ├── index.html
-    ├── css/
-    │   ├── main.css
-    │   ├── sidebar.css
-    │   ├── library.css
-    │   ├── reader.css
-    │   └── notes.css
-    └── js/
-        ├── app.js          ← Global state, bootstrap
-        ├── navigation.js   ← Page routing
-        ├── library.js      ← Article management & cards
-        ├── reader.js       ← Text reading & annotation
-        ├── pdf-reader.js   ← PDF.js integration
-        ├── annotations.js   ← Annotations page
-        ├── notes.js        ← Notes management
-        ├── search.js       ← Search shortcuts
-        └── settings.js     ← Settings page
+```text
+electron/
+  main.ts             Electron main process and IPC handlers
+  preload.ts          Restricted context bridge
+src/
+  db/schema.ts        Initial Drizzle SQLite schema
+  main.tsx            React application entry and UI
+  style.css           Application styles and Tailwind import
+  index.html          Legacy application entry (being retired)
+  js/                 Legacy plain JavaScript features
+  css/                Legacy application styles
+drizzle.config.ts     Drizzle Kit configuration
+vite.config.ts        Vite, React, Tailwind, and Electron plugins
 ```
 
-## **Security**
+## Data and privacy
 
-- `contextIsolation: true` — Renderer has no direct Node.js access.
-- `nodeIntegration: false` — Renderer cannot call Node APIs directly.
-- All file I/O runs in the main process via IPC.
-- PDF files are path-validated against `userData` before reading.
-- Atomic JSON writes (write to `.tmp`, then rename) prevent data corruption.
+Quest Veritas is designed for local-first storage without a required account or cloud service. The new SQLite runtime, local PDF storage, and backup/restore flow are not yet implemented. Avoid treating the current UI mock cards as saved user data.
 
-## **License**
+## Security
+
+- Electron renderer uses `contextIsolation: true`, `nodeIntegration: false`, and sandboxing.
+- The preload exposes a small, explicit API instead of raw IPC access.
+- IPC inputs should be validated and filesystem paths constrained as features are added.
+- Imported HTML must be sanitized before display; URL fetching and article extraction are not yet available in the new interface.
+
+## License
 
 MIT

@@ -1,24 +1,38 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment files and secrets
 .env
 .env.*
 !.env.example
+
+# Vite and Electron build output
+dist/
+dist-electron/
+build/
+release/
+
+# Local SQLite databases and SQLite sidecar files
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+veritas.db
+
+# Drizzle local metadata
+drizzle/meta/_journal.json
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+*.log
 
-# Build outputs
-dist/
-build/
+# TypeScript incremental build info
+*.tsbuildinfo
 
-# OS files
+# OS and editor files
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
 .idea/
