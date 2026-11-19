@@ -1,2 +1,2 @@
 /// <reference types="vite/client" />
-interface Window { veritas?: { version:()=>Promise<string>; validateImportUrl:(url:string)=>Promise<{ok:boolean;url?:string;error?:string}>; databaseStatus:()=>Promise<{configured:boolean;path:string}> } }
+interface Window { veritas?: { version:()=>Promise<string>; validateImportUrl:(url:string)=>Promise<{ok:boolean;url?:string;error?:string}>; databaseStatus:()=>Promise<{configured:boolean;path:string}>; listDocuments:()=>Promise<any[]>; importUrl:(url:string)=>Promise<{ok:boolean;document:any;error?:string}>; importPdf:()=>Promise<{ok:boolean;canceled?:boolean;document?:any;error?:string}>; readPdf:(id:string)=>Promise<string> } }

@@ -1,57 +1,33 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BookOpen, Highlighter, Inbox, LibraryBig, NotebookPen, Plus, Search, Settings, X, Globe2, FileText } from 'lucide-react';
+import { BookOpen, Highlighter, Inbox, LibraryBig, NotebookPen, Plus, Search, Settings, X, Globe2, FileText, ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import * as pdfjs from 'pdfjs-dist';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import './style.css';
+import { ReaderWorkspace } from './ReaderWorkspace';
 
-const pages = [
-  { name: 'Library', icon: BookOpen }, { name: 'Inbox', icon: Inbox },
-  { name: 'Highlights', icon: Highlighter }, { name: 'Notes', icon: NotebookPen },
-  { name: 'Settings', icon: Settings },
-];
+type DocumentItem={id:string;title:string;authors?:string;source:string;url:string;type:'article'|'pdf';content?:string;text?:string;pdfFile?:string;importedAt:string};
+window.veritas && (pdfjs.GlobalWorkerOptions.workerSrc=workerUrl);
+const pages=[{name:'Library',icon:BookOpen},{name:'Inbox',icon:Inbox},{name:'Highlights',icon:Highlighter},{name:'Notes',icon:NotebookPen},{name:'Settings',icon:Settings}];
 
-function App() {
-  const [page, setPage] = React.useState('Library');
-  const [showImport, setShowImport] = React.useState(false);
-  const [url, setUrl] = React.useState('');
-  const [status, setStatus] = React.useState('');
-  const [searching, setSearching] = React.useState(false);
-  const [query, setQuery] = React.useState('');
-  const openImport = () => { setStatus(''); setUrl(''); setShowImport(true); };
-
-  React.useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') { event.preventDefault(); openImport(); }
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setSearching(true); document.getElementById('global-search')?.focus(); }
-      if (event.key === 'Escape') setShowImport(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  async function validateUrl() {
-    const result = await window.veritas?.validateImportUrl(url);
-    setStatus(result?.ok ? 'URL is valid. Article importing is not connected yet.' : result?.error ?? 'Could not validate this URL.');
-  }
-
-  const title = page;
-  return <div className="app">
-    <aside className="sidebar">
-      <div className="brand"><div className="brandmark"><LibraryBig size={17}/></div><span>Quest Veritas</span></div>
-      <button className="searchbox" onClick={() => { setSearching(true); requestAnimationFrame(() => document.getElementById('global-search')?.focus()); }}><Search size={15}/><span>Search anything</span><kbd>Ctrl K</kbd></button>
-      <div className="nav-label">WORKSPACE</div>
-      <nav>{pages.map(({name, icon: Icon}) => <button key={name} className={`navitem ${page===name?'active':''}`} onClick={() => setPage(name)}><Icon size={17}/>{name}</button>)}</nav>
-      <div className="sidebar-bottom"><div className="storage"><div><strong>Your library</strong><small>Stored on this device</small></div></div></div>
-    </aside>
-    <main className="main">
-      <header className="topbar"><div className="breadcrumbs">Workspace <span>/</span> <b>{title}</b></div>{searching&&<label className="inline-search"><Search size={15}/><input id="global-search" placeholder="Search your library" value={query} onChange={e=>setQuery(e.target.value)}/><button className="iconbtn" onClick={()=>{setSearching(false);setQuery('')}}><X size={14}/></button></label>}</header>
-      <section className="content">
-        <div className="page-heading"><div><div className="eyebrow">YOUR PERSONAL RESEARCH SPACE</div><h1>{title}<span className="period">.</span></h1><p className="subheading">{page==='Library'?'A home for the ideas worth keeping.':`Your ${page.toLowerCase()} will live here.`}</p></div>{page==='Library'&&<button className="primary" onClick={openImport}><Plus size={17}/> Import source</button>}</div>
-        {page==='Library'&&<div className="empty-panel"><div className="empty-icon"><BookOpen/></div><strong>Your library starts here</strong><span>Import an article or paper to read, annotate, and revisit.</span><button className="primary" onClick={openImport}><Plus size={16}/> Import a source</button></div>}
-        {page!=='Library'&&<div className="empty-panel"><div className="empty-icon"><BookOpen/></div><strong>{page} is ready for your research</strong><span>This section will show your saved {page.toLowerCase()} as you add content.</span>{page==='Notes'&&<button className="primary" onClick={()=>setStatus('Notes editor is coming in the next implementation step.')}><Plus size={16}/> New note</button>}</div>}
-      </section>
-    </main>
-    {showImport&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setShowImport(false)}}><div className="dialog"><button className="dialog-close" onClick={()=>setShowImport(false)}><X size={17}/></button><div className="dialog-icon"><Plus size={19}/></div><div className="eyebrow">GROW YOUR LIBRARY</div><h2>Bring something in.</h2><p className="dialog-sub">Save an article or paper to read, annotate, and return to.</p><div className="import-tabs"><button className="tab selected"><Globe2 size={15}/> Web link</button><button className="tab" onClick={()=>setStatus('PDF import is not connected yet.')}><FileText size={15}/> PDF</button></div><label className="input-label">ARTICLE OR PAPER URL</label><div className="url-row"><Globe2 size={16}/><input autoFocus placeholder="https:// or arxiv.org/abs/..." value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&void validateUrl()}/><button onClick={()=>void validateUrl()}>Continue</button></div>{status&&<p className="dialog-sub" role="status">{status}</p>}<div className="dialog-foot"><span>arXiv papers and web articles supported</span><kbd>ESC</kbd></div></div></div>}
-  </div>;
+function PdfView({doc,onBack}:{doc:DocumentItem;onBack:()=>void}){
+ const host=React.useRef<HTMLDivElement>(null);const [page,setPage]=React.useState(1);const [total,setTotal]=React.useState(0);const [scale,setScale]=React.useState(1.2);const [error,setError]=React.useState('');
+ React.useEffect(()=>{let cancelled=false;let task:pdfjs.PDFDocumentLoadingTask|undefined;async function render(){try{const base64=await window.veritas?.readPdf(doc.id);if(!base64)throw new Error('PDF file could not be read');const raw=atob(base64);const data=Uint8Array.from(raw,c=>c.charCodeAt(0));task=pdfjs.getDocument({data});const pdf=await task.promise;if(cancelled)return;setTotal(pdf.numPages);const target=host.current;if(!target)return;target.replaceChildren();for(let n=1;n<=pdf.numPages;n++){const pg=await pdf.getPage(n);if(cancelled)return;const viewport=pg.getViewport({scale});const canvas=document.createElement('canvas');canvas.className='pdf-page';canvas.width=viewport.width;canvas.height=viewport.height;canvas.dataset.page=String(n);target.append(canvas);await pg.render({canvas,viewport}).promise;}}catch(e){if(!cancelled)setError(e instanceof Error?e.message:'Unable to display PDF.')}}void render();return()=>{cancelled=true;void task?.destroy()}},[doc.id,scale]);
+ return <section className="content"><button className="back-btn" onClick={onBack}><ArrowLeft size={15}/> Library</button><div className="reader-head"><div><div className="eyebrow">PDF DOCUMENT</div><h1>{doc.title}</h1></div><div className="pdf-toolbar"><button className="view-button" onClick={()=>setScale(s=>Math.max(.6,s-.15))}><ZoomOut size={16}/></button><span>{Math.round(scale*100)}%</span><button className="view-button" onClick={()=>setScale(s=>Math.min(2,s+.15))}><ZoomIn size={16}/></button><button className="view-button" onClick={()=>{setPage(p=>Math.max(1,p-1));host.current?.querySelector(`[data-page="${Math.max(1,page-1)}"]`)?.scrollIntoView({behavior:'smooth'})}}><ChevronLeft size={16}/></button><span>{page}/{total||'—'}</span><button className="view-button" onClick={()=>{setPage(p=>Math.min(total,p+1));host.current?.querySelector(`[data-page="${Math.min(total,page+1)}"]`)?.scrollIntoView({behavior:'smooth'})}}><ChevronRight size={16}/></button></div></div>{error?<p className="reader-error">{error}</p>:<div className="pdf-pages" ref={host} onScroll={e=>{const el=e.currentTarget;let nearest=1;for(const pageEl of Array.from(el.querySelectorAll<HTMLElement>('[data-page]'))){if(pageEl.offsetTop-el.scrollTop<el.clientHeight*.55)nearest=Number(pageEl.dataset.page)}setPage(nearest)}}/>}</section>;
 }
-
+function App(){
+ const [page,setPage]=React.useState('Library'),[docs,setDocs]=React.useState<DocumentItem[]>([]),[active,setActive]=React.useState<DocumentItem|null>(null),[showImport,setShowImport]=React.useState(false),[tab,setTab]=React.useState<'web'|'pdf'>('web'),[url,setUrl]=React.useState(''),[status,setStatus]=React.useState(''),[busy,setBusy]=React.useState(false),[query,setQuery]=React.useState('');
+ const refresh=React.useCallback(async()=>{setDocs(await window.veritas?.listDocuments()??[])},[]);React.useEffect(()=>{void refresh()},[refresh]);
+ const open=()=>{setStatus('');setUrl('');setTab('web');setShowImport(true)};
+ React.useEffect(()=>{const h=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='i'){e.preventDefault();open()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('global-search')?.focus()}if(e.key==='Escape')setShowImport(false)};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[]);
+ async function importWeb(){if(!url.trim()){setStatus('Paste an article URL first.');return}setBusy(true);setStatus('Fetching and extracting the page…');try{const result=await window.veritas?.importUrl(url.trim());if(!result?.ok)throw new Error(result?.error??'Import failed.');await refresh();setActive(result.document);setShowImport(false)}catch(e){setStatus(e instanceof Error?e.message:'Could not import page.')}finally{setBusy(false)}}
+ async function importPdf(){setBusy(true);setStatus('Choose a PDF to add to your library.');try{const result=await window.veritas?.importPdf();if(result?.ok){await refresh();setActive(result.document);setShowImport(false)}else if(!result?.canceled)setStatus(result?.error??'PDF import failed.')}catch(e){setStatus(e instanceof Error?e.message:'PDF import failed.')}finally{setBusy(false)}}
+ const filtered=docs.filter(d=>`${d.title} ${d.authors??''} ${d.source} ${d.text??''}`.toLowerCase().includes(query.toLowerCase()));
+ if(active){if(active.type==='pdf')return <div className="app"><main className="main"><header className="topbar">Workspace <span>/</span> {active.title}</header><PdfView doc={active} onBack={()=>setActive(null)}/></main></div>;return <div className="app"><main className="main"><ReaderWorkspace doc={active} onBack={()=>setActive(null)}/></main></div>}
+ return <div className="app"><aside className="sidebar"><div className="brand"><div className="brandmark"><LibraryBig size={17}/></div><span>Quest Veritas</span></div><button className="searchbox" onClick={()=>document.getElementById('global-search')?.focus()}><Search size={15}/><span>Search anything</span><kbd>Ctrl K</kbd></button><div className="nav-label">WORKSPACE</div><nav>{pages.map(({name,icon:Icon})=><button key={name} className={`navitem ${page===name?'active':''}`} onClick={()=>setPage(name)}><Icon size={17}/>{name}</button>)}</nav><div className="sidebar-bottom"><div className="storage"><div><strong>Your library</strong><small>{docs.length} local sources</small></div></div></div></aside>
+ <main className="main"><header className="topbar"><div className="breadcrumbs">Workspace <span>/</span> <b>{page}</b></div><label className="inline-search"><Search size={15}/><input id="global-search" placeholder="Search your library" value={query} onChange={e=>setQuery(e.target.value)}/></label></header><section className="content"><div className="page-heading"><div><div className="eyebrow">YOUR PERSONAL RESEARCH SPACE</div><h1>{page}<span className="period">.</span></h1><p className="subheading">Read, annotate, and return to the ideas worth keeping.</p></div><button className="primary" onClick={open}><Plus size={17}/> Import source</button></div>
+ {page==='Library'?filtered.length?<><div className="section-title"><h2>{query?`Search results (${filtered.length})`:`Your sources (${filtered.length})`}</h2></div><div className="document-list">{filtered.map(d=><button key={d.id} className="document-row" onClick={()=>setActive(d)}><span className="doc-icon">{d.type==='pdf'?<FileText size={17}/>:<Globe2 size={17}/>}</span><span className="doc-title"><strong>{d.title}</strong><small>{d.authors||d.source} · {d.type==='pdf'?'PDF':'Web article'}</small></span><span className="doc-date">{new Date(d.importedAt).toLocaleDateString()}</span></button>)}</div></>:<div className="empty-panel"><div className="empty-icon"><BookOpen/></div><strong>{query?'No matching sources':'Your library starts here'}</strong><span>{query?'Try another title, author, or phrase.':'Import an article or paper to read, annotate, and revisit.'}</span><button className="primary" onClick={open}><Plus size={16}/> Import a source</button></div>:<div className="empty-panel"><div className="empty-icon"><BookOpen/></div><strong>{page} is ready</strong><span>This section will populate as the related features are added.</span></div>}
+ </section></main>
+ {showImport&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setShowImport(false)}}><div className="dialog"><button className="dialog-close" onClick={()=>setShowImport(false)}><X size={17}/></button><div className="dialog-icon"><Plus size={19}/></div><div className="eyebrow">GROW YOUR LIBRARY</div><h2>Bring something in.</h2><p className="dialog-sub">Import a web article or a PDF. Files are copied into your local library.</p><div className="import-tabs"><button className={`tab ${tab==='web'?'selected':''}`} onClick={()=>{setTab('web');setStatus('')}}><Globe2 size={15}/> Web link</button><button className={`tab ${tab==='pdf'?'selected':''}`} onClick={()=>{setTab('pdf');setStatus('')}}><FileText size={15}/> PDF</button></div>{tab==='web'?<><label className="input-label">ARTICLE OR PAPER URL</label><div className="url-row"><Globe2 size={16}/><input autoFocus placeholder="https:// or arxiv.org/abs/..." value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&void importWeb()}/><button disabled={busy} onClick={()=>void importWeb()}>{busy?'Importing…':'Import'}</button></div></>:<div className="pdf-import"><FileText size={22}/><p>Choose a PDF from your computer. Quest Veritas copies it into your local library.</p><button disabled={busy} className="primary" onClick={()=>void importPdf()}>{busy?'Opening…':'Choose PDF'}</button></div>}{status&&<p className="dialog-sub" role="status">{status}</p>}<div className="dialog-foot"><span>Imported content is stored on this device.</span><kbd>ESC</kbd></div></div></div>}</div>;
+}
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
